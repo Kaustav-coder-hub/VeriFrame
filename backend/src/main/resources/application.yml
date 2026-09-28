@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: media-provenance-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:12MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+app:
+  security:
+    api-key: ${SECURITY_API_KEY:dev-secret-api-key-change-in-prod}
+    header-name: X-API-KEY
+  cors:
+    allowed-origins: ${FRONTEND_ORIGIN:http://localhost:5173,http://localhost:3000}
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:demo}
+    api-key: ${CLOUDINARY_API_KEY:1234567890}
+    api-secret: ${CLOUDINARY_API_SECRET:abcdefghijklmnopqrstuvwxyz}
+  blockchain:
+    mode: ${BLOCKCHAIN_MODE:mock}
+    service-url: ${BLOCKCHAIN_SERVICE_URL:http://localhost:4000}
+    connect-timeout-ms: ${BLOCKCHAIN_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${BLOCKCHAIN_READ_TIMEOUT_MS:10000}

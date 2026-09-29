@@ -61,13 +61,9 @@ public class SecurityConfig {
                     auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/h2-console/**").permitAll();
                 }
 
-                // Public REST API endpoints for user browser flows
+                // Public read and verification endpoints for user browser flows
                 auth.requestMatchers(HttpMethod.GET, "/api/v1/media/**").permitAll();
-                auth.requestMatchers(HttpMethod.POST, "/api/v1/media", "/api/v1/media/**").permitAll();
                 auth.requestMatchers(HttpMethod.POST, "/api/v1/verify").permitAll();
-
-                // Protected admin/maintenance endpoints
-                auth.requestMatchers("/api/v1/admin/**").authenticated();
                 auth.anyRequest().permitAll();
             });
 
@@ -95,7 +91,8 @@ public class SecurityConfig {
 
             String path = request.getRequestURI();
 
-            if (path.startsWith("/api/v1/admin/")) {
+            boolean mediaWrite = "/api/v1/media".equals(path) || path.startsWith("/api/v1/media/");
+            if ("POST".equalsIgnoreCase(request.getMethod()) && mediaWrite) {
                 String expectedKey = appProperties.getSecurity().getApiKey();
                 String headerName = appProperties.getSecurity().getHeaderName();
                 String providedKey = request.getHeader(headerName);
@@ -106,7 +103,7 @@ public class SecurityConfig {
                 }
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        "admin-client", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                    "api-client", null, List.of(new SimpleGrantedAuthority("ROLE_API"))
                 );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

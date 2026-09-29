@@ -97,7 +97,16 @@ public class CloudinaryGatewayImpl implements CloudinaryGateway {
 
         byte[] derivedBytes = downloadDerivedBytes(fixedFormatUrl);
         String derivedFilename = "transformed_" + operation.toLowerCase() + ".jpg";
-        return upload(derivedBytes, derivedFilename, mediaId);
+        CloudinaryUploadResult uploadResult = upload(derivedBytes, derivedFilename, mediaId);
+        return CloudinaryUploadResult.builder()
+            .publicId(uploadResult.getPublicId())
+            .assetId(uploadResult.getAssetId())
+            .secureUrl(uploadResult.getSecureUrl())
+            .derivedBytes(derivedBytes)
+            .width(uploadResult.getWidth())
+            .height(uploadResult.getHeight())
+            .bytes(uploadResult.getBytes())
+            .build();
     }
 
     @Override

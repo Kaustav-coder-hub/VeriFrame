@@ -32,6 +32,37 @@ class SecurityAndFilterTests {
     };
 
     @Test
+    void postMediaWithoutKey_ReturnsUnauthorizedProblem() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", MINI_JPEG);
+
+        mockMvc.perform(multipart("/api/v1/media").file(file))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+    }
+
+    @Test
+    void postMediaWithWrongKey_ReturnsUnauthorized() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", MINI_JPEG);
+
+        mockMvc.perform(multipart("/api/v1/media").file(file).header("X-API-KEY", "wrong-key"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void postMediaWithCorrectKey_ReachesController() throws Exception {
+        mockMvc.perform(post("/api/v1/media").header("X-API-KEY", DEV_API_KEY))
+                .andExpect(result -> org.junit.jupiter.api.Assertions.assertNotEquals(401, result.getResponse().getStatus()));
+    }
+
+    @Test
+    void transformWithoutKey_ReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/v1/media/00000000-0000-0000-0000-000000000000/transform")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"operation\":\"CROP\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void postVerifyWithoutKey_Returns200Ok() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", MINI_JPEG);
         // Verify is public — no key needed, may return MISMATCH/NOT_FOUND but not 401

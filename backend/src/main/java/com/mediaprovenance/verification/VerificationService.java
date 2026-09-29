@@ -116,6 +116,20 @@ public class VerificationService {
                             .chainStatus("PENDING")
                             .message("Provenance record is pending blockchain confirmation. Retry in a moment.")
                             .build();
+                } else if ("FAILED".equals(chainStatus)) {
+                    log.info("PROVENANCE_FAILED: Hash [{}] chain registration failed", computedHash);
+                    String retryMessage = "Blockchain provenance registration failed and can be retried.";
+                    if (provenance.getErrorMessage() != null && !provenance.getErrorMessage().isBlank()) {
+                        retryMessage += " Error: " + provenance.getErrorMessage();
+                    }
+                    return VerificationResponse.builder()
+                            .status("PROVENANCE_FAILED")
+                            .hash(computedHash)
+                            .mediaId(version.getMediaAsset().getId())
+                            .matchedVersionId(version.getId().toString())
+                            .chainStatus("FAILED")
+                            .message(retryMessage)
+                            .build();
                 }
             }
         }

@@ -2,8 +2,7 @@ package com.mediaprovenance.media;
 
 import com.mediaprovenance.ai.AiResult;
 import com.mediaprovenance.ai.AiResultRepository;
-import com.mediaprovenance.blockchain.BlockchainClient;
-import com.mediaprovenance.blockchain.BlockchainRecord;
+import com.mediaprovenance.blockchain.ChainRegistrationService;
 import com.mediaprovenance.cloudinary.CloudinaryAiResultDto;
 import com.mediaprovenance.cloudinary.CloudinaryGateway;
 import com.mediaprovenance.cloudinary.CloudinaryUploadResult;
@@ -14,7 +13,6 @@ import com.mediaprovenance.provenance.ProvenanceRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +32,7 @@ public class MediaService {
     private final ProvenanceRecordRepository provenanceRepository;
     private final CloudinaryGateway cloudinaryGateway;
     private final HashService hashService;
-    private final BlockchainClient blockchainClient;
+    private final ChainRegistrationService chainRegistrationService;
 
     public MediaService(MediaAssetRepository assetRepository,
                         MediaVersionRepository versionRepository,
@@ -42,33 +40,31 @@ public class MediaService {
                         ProvenanceRecordRepository provenanceRepository,
                         CloudinaryGateway cloudinaryGateway,
                         HashService hashService,
-                        BlockchainClient blockchainClient) {
+                        ChainRegistrationService chainRegistrationService) {
         this.assetRepository = assetRepository;
         this.versionRepository = versionRepository;
         this.aiResultRepository = aiResultRepository;
         this.provenanceRepository = provenanceRepository;
         this.cloudinaryGateway = cloudinaryGateway;
         this.hashService = hashService;
-        this.blockchainClient = blockchainClient;
+        this.chainRegistrationService = chainRegistrationService;
     }
 
     /**
-     * Upload a new image. Computes the SHA-256 hash of the original bytes BEFORE sending to Cloudinary.
-     * If a version with the same hash already exists, returns the existing passport with duplicate=true.
-     * This supports rehearsal re-uploads of the same demo image without creating duplicates.
+     * Upload a new image. Computes SHA-256 of the original bytes BEFORE sending to Cloudinary.
+     * If a version with the same hash already exists, returns the existing passport (duplicate=true).
      */
     @Transactional
     public MediaUploadResponse upload(byte[] fileBytes, String originalFilename) {
-        // 1. Hash the original bytes first, before any Cloudinary processing
+        // 1. Hash the original bytes before any Cloudinary processing
         String sha256Hash = hashService.sha256(fileBytes);
         log.info("Upload requested for file [{}] with hash [{}]", originalFilename, sha256Hash);
 
-        // 2. Deduplication: if hash already exists, return existing passport
+        // 2. Deduplication: if hash already exists, return existing asset
         Optional<MediaVersion> existing = versionRepository.findBySha256Hash(sha256Hash);
         if (existing.isPresent()) {
             MediaVersion existingVersion = existing.get();
             log.info("Duplicate upload detected: hash [{}] already exists as version [{}]", sha256Hash, existingVersion.getId());
-            MediaPassportDto passport = buildPassport(existingVersion.getMediaAsset().getId());
             return MediaUploadResponse.builder()
                     .mediaId(existingVersion.getMediaAsset().getId())
                     .originalVersion(toVersionDto(existingVersion))
@@ -83,7 +79,7 @@ public class MediaService {
         // 4. AI tagging (graceful: never fails the pipeline)
         CloudinaryAiResultDto aiResultDto = cloudinaryGateway.analyzeAi(uploadResult.getPublicId());
 
-        // 5. Build optimized URL for display only (never used for hashing)
+        // 5. Optimized URL for display only (never used for hashing)
         String optimizedUrl = cloudinaryGateway.buildOptimizedUrl(uploadResult.getPublicId());
 
         // 6. Persist MediaAsset
@@ -137,8 +133,8 @@ public class MediaService {
                 .build();
         provenanceRepository.save(provenance);
 
-        // 10. Register on chain asynchronously
-        registerOnChainAsync(provenance.getId(), fileBytes, "NONE", null);
+        // 10. Register on chain — delegate to separate bean so @Async is proxy-intercepted
+        chainRegistrationService.registerAsync(provenance.getId(), fileBytes, "NONE", null);
 
         return MediaUploadResponse.builder()
                 .mediaId(mediaId)
@@ -148,8 +144,8 @@ public class MediaService {
     }
 
     /**
-     * Transform an existing media version. Applies the requested Cloudinary transformation,
-     * downloads the derived bytes in a fixed format (never f_auto), hashes them, and creates a new version.
+     * Transform an existing media version. Applies Cloudinary transformation,
+     * downloads derived bytes in fixed format (never f_auto), hashes them, creates new version.
      */
     @Transactional
     public MediaVersionDto transform(UUID mediaId, String operation, UUID sourceVersionId) {
@@ -169,19 +165,13 @@ public class MediaService {
             sourceVersion = versions.get(versions.size() - 1);
         }
 
-        // Apply transformation: download derived bytes in fixed format (never f_auto) then re-upload
+        // Apply transformation: download derived bytes in fixed format then re-upload
         CloudinaryUploadResult transformResult = cloudinaryGateway.transformAndUpload(
                 sourceVersion.getCloudinaryPublicId(), operation, mediaId.toString());
 
-        // Hash the derived bytes — download them explicitly in fixed format for deterministic hashing
-        byte[] derivedBytes = cloudinaryGateway.downloadDerivedBytes(transformResult.getSecureUrl());
+        // Hash the exact derived bytes that were uploaded as the canonical asset.
+        byte[] derivedBytes = transformResult.getDerivedBytes();
         String derivedHash = hashService.sha256(derivedBytes);
-
-        // Validate: transformation producing identical bytes to its parent is rejected
-        if (derivedHash.equalsIgnoreCase(sourceVersion.getSha256Hash())) {
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "IDENTICAL_TRANSFORM",
-                    "Transformation produced bytes identical to the parent version. No new version created.");
-        }
 
         // Check if this derived hash already exists (idempotent transforms)
         Optional<MediaVersion> existingDerived = versionRepository.findBySha256Hash(derivedHash);
@@ -210,8 +200,6 @@ public class MediaService {
                 .build();
         versionRepository.save(newVersion);
 
-        // Get parent provenance hash for chain linkage
-        Optional<ProvenanceRecord> parentProvenance = provenanceRepository.findByMediaVersionId(sourceVersion.getId());
         String parentHash = sourceVersion.getSha256Hash();
 
         ProvenanceRecord provenance = ProvenanceRecord.builder()
@@ -225,18 +213,20 @@ public class MediaService {
                 .build();
         provenanceRepository.save(provenance);
 
-        // Register on chain asynchronously
-        registerOnChainAsync(provenance.getId(), derivedBytes, operation.toUpperCase(), parentHash);
+        // Register on chain — delegate to separate bean
+        chainRegistrationService.registerAsync(provenance.getId(), derivedBytes, operation.toUpperCase(), parentHash);
 
         return toVersionDto(newVersion);
     }
 
+    @Transactional(readOnly = true)
     public MediaPassportDto getPassport(UUID mediaId) {
-        MediaAsset asset = assetRepository.findById(mediaId)
+        assetRepository.findById(mediaId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MEDIA_NOT_FOUND", "Media asset not found: " + mediaId));
         return buildPassport(mediaId);
     }
 
+    @Transactional(readOnly = true)
     public List<ProvenanceDto> getProvenance(UUID mediaId) {
         assetRepository.findById(mediaId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MEDIA_NOT_FOUND", "Media asset not found: " + mediaId));
@@ -263,38 +253,7 @@ public class MediaService {
                 .toList();
     }
 
-    @Async
-    public void registerOnChainAsync(UUID provenanceId, byte[] fileBytes, String operation, String previousHash) {
-        ProvenanceRecord provenance = provenanceRepository.findById(provenanceId).orElse(null);
-        if (provenance == null) {
-            log.error("Cannot register on chain: ProvenanceRecord not found [{}]", provenanceId);
-            return;
-        }
-
-        try {
-            BlockchainRecord chainRecord;
-            if (previousHash == null) {
-                chainRecord = blockchainClient.registerOriginal(fileBytes, operation);
-            } else {
-                chainRecord = blockchainClient.registerVersion(previousHash, fileBytes, operation);
-            }
-
-            provenance.setChainStatus("CONFIRMED");
-            provenance.setTxHash(chainRecord.getTxHash());
-            provenance.setRecordId(chainRecord.getRecordId());
-            provenance.setExplorerUrl(chainRecord.getExplorerUrl());
-            provenance.setConfirmedAt(Instant.now());
-            provenance.setAttempts(provenance.getAttempts() + 1);
-            provenanceRepository.save(provenance);
-            log.info("Chain registration CONFIRMED for provenance [{}], txHash [{}]", provenanceId, chainRecord.getTxHash());
-        } catch (Exception e) {
-            log.error("Chain registration FAILED for provenance [{}]: {}", provenanceId, e.getMessage());
-            provenance.setChainStatus("FAILED");
-            provenance.setErrorMessage(e.getMessage());
-            provenance.setAttempts(provenance.getAttempts() + 1);
-            provenanceRepository.save(provenance);
-        }
-    }
+    // --- private helpers ---
 
     private MediaPassportDto buildPassport(UUID mediaId) {
         MediaAsset asset = assetRepository.findById(mediaId).orElseThrow();
@@ -335,6 +294,7 @@ public class MediaService {
     }
 
     private String detectMimeType(byte[] bytes) {
+        if (bytes.length < 4) return "application/octet-stream";
         if (bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xD8) return "image/jpeg";
         if (bytes[0] == (byte) 0x89 && bytes[1] == (byte) 0x50) return "image/png";
         if (bytes[0] == (byte) 0x47 && bytes[1] == (byte) 0x49) return "image/gif";

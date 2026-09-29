@@ -8,7 +8,7 @@ import java.util.UUID;
 @Value
 @Builder
 public class VerificationResponse {
-    String status; // VERIFIED | MISMATCH | NOT_FOUND
+    String status; // VERIFIED | MISMATCH | NOT_FOUND | PENDING | PROVENANCE_FAILED
     String hash;
     UUID mediaId;
     String matchedVersionId;

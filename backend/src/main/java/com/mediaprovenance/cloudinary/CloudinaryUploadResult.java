@@ -9,6 +9,7 @@ public class CloudinaryUploadResult {
     String publicId;
     String assetId;
     String secureUrl;
+    byte[] derivedBytes;
     int width;
     int height;
     long bytes;

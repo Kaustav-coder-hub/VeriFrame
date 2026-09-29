@@ -66,6 +66,8 @@ public class HttpBlockchainClient implements BlockchainClient {
                 return history.get(history.size() - 1);
             }
             throw new ApiException(HttpStatus.CONFLICT, "HASH_ALREADY_REGISTERED", "Hash already registered on chain", conflict);
+        } catch (ApiException ex) {
+            throw ex;
         } catch (Exception e) {
             log.error("Failed to register original media on blockchain service: {}", e.getMessage(), e);
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "BLOCKCHAIN_SERVICE_ERROR", "Failed to communicate with blockchain service: " + e.getMessage(), e);
@@ -107,6 +109,8 @@ public class HttpBlockchainClient implements BlockchainClient {
                 return history.get(history.size() - 1);
             }
             throw new ApiException(HttpStatus.CONFLICT, "HASH_ALREADY_REGISTERED", "Hash already registered on chain", conflict);
+        } catch (ApiException ex) {
+            throw ex;
         } catch (Exception e) {
             log.error("Failed to register version on blockchain service: {}", e.getMessage(), e);
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "BLOCKCHAIN_SERVICE_ERROR", "Failed to communicate with blockchain service: " + e.getMessage(), e);
@@ -161,8 +165,9 @@ public class HttpBlockchainClient implements BlockchainClient {
                 return List.of();
             }
 
-            return response.stream().map(map -> BlockchainRecord.builder()
-                    .hash(map.get("hash") != null ? map.get("hash").toString() : null)
+                return response.stream().map(map -> BlockchainRecord.builder()
+                    .hash(map.get("mediaHash") != null ? map.get("mediaHash").toString()
+                        : map.get("hash") != null ? map.get("hash").toString() : null)
                     .previousHash(map.get("previousHash") != null ? map.get("previousHash").toString() : null)
                     .recordId(map.get("recordId") != null ? Long.parseLong(map.get("recordId").toString()) : null)
                     .txHash(map.get("txHash") != null ? map.get("txHash").toString() : null)

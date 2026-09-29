@@ -75,6 +75,7 @@ public class MediaController {
             case "MISMATCH" -> HttpStatus.OK;
             case "NOT_FOUND" -> HttpStatus.OK;
             case "PENDING" -> HttpStatus.CONFLICT;
+            case "PROVENANCE_FAILED" -> HttpStatus.CONFLICT;
             default -> HttpStatus.OK;
         };
 

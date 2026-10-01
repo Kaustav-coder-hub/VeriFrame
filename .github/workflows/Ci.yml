@@ -66,10 +66,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      # Node 22 required: `node --test "test/*.test.js"` glob patterns
+      # are only supported by the Node test runner from v21 onwards.
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install dependencies
         run: |
@@ -202,8 +204,9 @@ jobs:
 
       - name: Public verify endpoint rejects empty request
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/verify)
-          echo "POST /api/v1/verify without file -> $code"
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/v1/verify \
+            -F "mediaId=00000000-0000-0000-0000-000000000000")
+          echo "POST /api/v1/verify (multipart, no file part) -> $code"
           test "$code" = "400"
 
       - name: Logs on failure

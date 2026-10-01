@@ -1,0 +1,23 @@
+{
+  "name": "media-provenance-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain module for Media Provenance (Cloudinary AI Hackathon 2026)",
+  "main": "src/provenance.js",
+  "scripts": {
+    "compile": "node scripts/compile.js",
+    "deploy": "node scripts/compile.js && node scripts/deploy.js",
+    "test": "node scripts/compile.js && node --test \"test/*.test.js\"",
+    "demo": "node scripts/demo-test.js",
+    "start": "node src/server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
+    "ethers": "^6.17.0",
+    "express": "^5.2.1",
+    "ganache": "^7.9.2",
+    "multer": "^2.4.0",
+    "solc": "^0.8.24"
+  }
+}

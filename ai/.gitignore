@@ -1,0 +1,21 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Test media
+test_image.jpg
+test_image_cropped.jpg
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

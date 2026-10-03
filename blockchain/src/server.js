@@ -400,9 +400,10 @@ module.exports = app;
 if (require.main === module) {
   const port = process.env.PORT || 4000;
 
-  app.listen(port, () => {
-    console.log(
-      `Provenance API on http://localhost:${port}`
-    );
+  const PORT = process.env.PORT || 4000;
+  const HOST = '0.0.0.0';
+
+  app.listen(PORT, HOST, () => {
+    console.log(`Provenance API running on ${HOST}:${PORT}`);
   });
 }

@@ -136,7 +136,20 @@ public class MediaService {
         provenanceRepository.save(provenance);
 
         // 10. Register on chain — delegate to separate bean so @Async is proxy-intercepted
-        chainRegistrationService.registerAsync(provenance.getId(), fileBytes, "NONE", null);
+        // 10. Register on chain only AFTER the DB transaction commits
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                        chainRegistrationService.registerAsync(
+                                provenance.getId(),
+                                fileBytes,
+                                "NONE",
+                                null
+                        );
+                }
+                }
+        );
 
         return MediaUploadResponse.builder()
                 .mediaId(mediaId)
@@ -216,7 +229,20 @@ public class MediaService {
         provenanceRepository.save(provenance);
 
         // Register on chain — delegate to separate bean
-        chainRegistrationService.registerAsync(provenance.getId(), derivedBytes, operation.toUpperCase(), parentHash);
+        // Register on chain only AFTER the DB transaction commits
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                        chainRegistrationService.registerAsync(
+                                provenance.getId(),
+                                derivedBytes,
+                                operation.toUpperCase(),
+                                parentHash
+                        );
+                }
+                }
+        );
 
         return toVersionDto(newVersion);
     }

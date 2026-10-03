@@ -19,7 +19,7 @@ async function call(path, options = {}) {
     headers['X-API-KEY'] = API_KEY;
   }
 
-  const response = await fetch(`${BASE}${path}`, {
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
   });

@@ -60,6 +60,7 @@ export default function Register() {
       }
 
       // Get complete media passport
+            // Get complete media passport
       const passport = await getMediaPassport(result.mediaId);
 
       setRecord({
@@ -67,11 +68,18 @@ export default function Register() {
         ...passport,
       });
 
-      // Get provenance timeline
-      const provenance = await getHistory(result.mediaId);
+      // Wait for asynchronous blockchain registration.
+      // The backend creates the record first and then
+      // registers the hash on-chain in the background.
+      const provenance = await waitForProvenance(
+        result.mediaId
+      );
 
       setHistory(provenance || []);
       setStage('registered');
+
+
+
     } catch (error) {
       console.error('Registration failed:', error);
 
@@ -86,6 +94,39 @@ export default function Register() {
     } finally {
       setBusy(false);
     }
+  }
+
+  // ─────────────────────────────────────────────
+  // WAIT FOR BLOCKCHAIN CONFIRMATION
+  // ─────────────────────────────────────────────
+
+  async function waitForProvenance(mediaId, maxAttempts = 30) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const provenance = await getHistory(mediaId);
+      const historyData = provenance || [];
+
+      setHistory(historyData);
+
+      const latest =
+        historyData.length > 0
+          ? historyData[historyData.length - 1]
+          : null;
+
+      const status = latest?.chainStatus;
+
+      if (status === 'CONFIRMED' || status === 'FAILED') {
+        return historyData;
+      }
+
+      // Check again after 2 seconds.
+      await new Promise((resolve) =>
+        setTimeout(resolve, 2000)
+      );
+    }
+
+    // Return the latest known state if confirmation
+    // takes longer than expected.
+    return getHistory(mediaId);
   }
 
   // ─────────────────────────────────────────────
@@ -116,7 +157,9 @@ export default function Register() {
       });
 
       // Refresh provenance timeline
-      const provenance = await getHistory(
+      // Wait for the derived version's blockchain
+      // registration to be confirmed.
+      const provenance = await waitForProvenance(
         record.mediaId
       );
 

@@ -21,16 +21,16 @@ const ABI = [
 /**
  * Custom ethers v6 provider using Node's native fetch().
  *
- * This avoids the JsonRpcProvider transport timeout that was
- * occurring with the Sepolia RPC endpoint.
+ * The standard ethers JsonRpcProvider was timing out against
+ * the current Sepolia RPC endpoint.
+ *
+ * JsonRpcApiProvider expects _send() to return an array of
+ * JSON-RPC response objects, so the RPC response is normalized
+ * to an array below.
  */
 class NativeFetchProvider extends ethers.JsonRpcApiProvider {
   constructor(url) {
-    super({
-      chainId: 11155111,
-      name: 'sepolia',
-    });
-
+    super();
     this.url = url;
   }
 
@@ -49,19 +49,29 @@ class NativeFetchProvider extends ethers.JsonRpcApiProvider {
       );
     }
 
-    return await response.json();
+    const result = await response.json();
+
+    return Array.isArray(result) ? result : [result];
   }
 }
 
 /**
- * Sepolia provider
+ * Provider
+ *
+ * Uses the RPC endpoint from .env.
+ *
+ * The provider does NOT hard-code Sepolia's chain ID,
+ * allowing the same code to work with:
+ *
+ * - Local Ganache during tests
+ * - Sepolia in production
  */
 const provider = new NativeFetchProvider(
   process.env.SEPOLIA_RPC_URL
 );
 
 /**
- * Wallet used for blockchain transactions
+ * Wallet used for blockchain transactions.
  */
 const wallet = new ethers.Wallet(
   process.env.PRIVATE_KEY,
@@ -69,12 +79,30 @@ const wallet = new ethers.Wallet(
 );
 
 /**
- * Smart contract instance
+ * NonceManager
+ *
+ * Keeps transaction nonces synchronized when multiple
+ * blockchain transactions are created from the same wallet.
+ *
+ * Without this, two transactions can sometimes receive
+ * the same/stale nonce and Ganache rejects the transaction
+ * with errors such as:
+ *
+ * "account has nonce of: 4 tx has nonce of: 3"
+ */
+const signer = new ethers.NonceManager(wallet);
+
+/**
+ * Smart contract instance.
+ *
+ * IMPORTANT:
+ * The contract now uses the NonceManager instead of the
+ * raw wallet.
  */
 const contract = new ethers.Contract(
   process.env.CONTRACT_ADDRESS,
   ABI,
-  wallet
+  signer
 );
 
 const EXPLORER = 'https://sepolia.etherscan.io/tx/';
@@ -84,9 +112,6 @@ const EXPLORER = 'https://sepolia.etherscan.io/tx/';
  *
  * Returns:
  * 0x + 64 hexadecimal characters
- *
- * Example:
- * 0xabc123...
  */
 function hashMedia(buffer) {
   return (
@@ -125,7 +150,10 @@ function fmt(r) {
  * Transaction queue.
  *
  * Blockchain transactions are sent one at a time so concurrent
- * API requests do not reuse the same nonce.
+ * API requests do not attempt to submit transactions simultaneously.
+ *
+ * The NonceManager above additionally keeps nonce allocation
+ * synchronized with the signer.
  */
 let queue = Promise.resolve();
 

@@ -1,96 +1,134 @@
-// Talks to the blockchain REST API (see /blockchain/src/server.js).
-// Falls back to in-memory mock data if VITE_API_URL is unset or unreachable,
-// so the UI is demo-able before the backend/blockchain pieces are wired up.
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-const BASE = import.meta.env.VITE_API_URL;
+const API_KEY =
+  import.meta.env.VITE_API_KEY || 'dev-secret-api-key-change-in-prod';
 
-function randomHash() {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return '0x' + Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-// --- in-memory mock store (used only when no backend is configured/reachable) ---
-const mock = { records: new Map() };
-
-function mockRegister(previousHash, operation) {
-  const hash = randomHash();
-  const recordId = mock.records.size + 1;
-  const record = {
-    recordId,
-    mediaHash: hash,
-    previousHash: previousHash || null,
-    operation,
-    timestamp: new Date().toISOString(),
-    creator: '0xMockWallet000000000000000000000000000',
+async function call(path, options = {}) {
+  const headers = {
+    ...(options.headers || {}),
   };
-  mock.records.set(hash, record);
-  return { hash, recordId, txHash: '0xmock' + recordId, explorerUrl: null, previousHash: previousHash || null };
+
+  // Backend requires API key for POST / protected endpoints
+  if (options.method === 'POST') {
+    headers['X-API-KEY'] = API_KEY;
+  }
+
+  const response = await fetch(`${BASE}${path}`, {
+    ...options,
+    headers,
+  });
+
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      body?.message ||
+        body?.error ||
+        `Request failed (${response.status})`
+    );
+  }
+
+  return body;
 }
 
-function mockHistory(hash) {
-  const chain = [];
-  let cur = mock.records.get(hash);
-  while (cur) {
-    chain.unshift(cur);
-    cur = cur.previousHash ? mock.records.get(cur.previousHash) : null;
-  }
-  return chain;
+
+// ─────────────────────────────────────────────
+// REGISTER ORIGINAL MEDIA
+// ─────────────────────────────────────────────
+
+export async function registerOriginal(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+
+  const result = await call('/api/v1/media', {
+    method: 'POST',
+    body: fd,
+  });
+
+  return normalizeUploadResult(result);
 }
 
-async function call(path, options) {
-  if (!BASE) throw new Error('no-backend');
-  const res = await fetch(BASE + path, options);
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed (${res.status})`);
-  }
-  return res.json();
+
+// ─────────────────────────────────────────────
+// GET MEDIA PASSPORT
+// ─────────────────────────────────────────────
+
+export async function getMediaPassport(mediaId) {
+  return call(`/api/v1/media/${mediaId}`);
 }
 
-export async function registerOriginal(file, operation = 'ORIGINAL') {
-  try {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('operation', operation);
-    return await call('/api/register', { method: 'POST', body: fd });
-  } catch {
-    return mockRegister(null, operation);
-  }
+
+// ─────────────────────────────────────────────
+// GET PROVENANCE / HISTORY
+// ─────────────────────────────────────────────
+
+export async function getHistory(mediaId) {
+  return call(`/api/v1/media/${mediaId}/provenance`);
 }
 
-export async function registerVersion(file, previousHash, operation) {
-  try {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('previousHash', previousHash);
-    fd.append('operation', operation);
-    return await call('/api/version', { method: 'POST', body: fd });
-  } catch {
-    return mockRegister(previousHash, operation);
-  }
+
+// ─────────────────────────────────────────────
+// CREATE DERIVED VERSION
+// ─────────────────────────────────────────────
+
+export async function registerVersion(mediaId, operation) {
+  return call(`/api/v1/media/${mediaId}/transform`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      operation,
+    }),
+  });
 }
+
+
+// ─────────────────────────────────────────────
+// VERIFY MEDIA
+// ─────────────────────────────────────────────
 
 export async function verifyMedia(file) {
-  try {
-    const fd = new FormData();
-    fd.append('file', file);
-    return await call('/api/verify', { method: 'POST', body: fd });
-  } catch {
-    // Without a real backend we can't recompute the hash of an arbitrary file against
-    // the mock store meaningfully, so mock verification just checks our own session records.
-    for (const record of mock.records.values()) {
-      if (record.__file === file) return { status: 'VERIFIED', hash: record.mediaHash, record };
-    }
-    return { status: 'MISMATCH', hash: randomHash(), record: null };
-  }
+  const fd = new FormData();
+  fd.append('file', file);
+
+  return call('/api/v1/verify', {
+    method: 'POST',
+    body: fd,
+  });
 }
 
-export async function getHistory(hash) {
-  try {
-    return await call(`/api/history/${hash}`);
-  } catch {
-    return mockHistory(hash);
-  }
+
+// ─────────────────────────────────────────────
+// NORMALIZE BACKEND RESPONSE
+// ─────────────────────────────────────────────
+
+function normalizeUploadResult(result) {
+  return {
+    ...result,
+
+    mediaId: result.mediaId,
+
+    hash:
+      result.hash ||
+      result.currentHash ||
+      result.mediaHash ||
+      result.originalVersion?.sha256Hash ||
+      null,
+
+    txHash:
+      result.txHash ||
+      result.originalVersion?.txHash ||
+      null,
+
+    previousHash:
+      result.previousHash ||
+      null,
+
+    recordId:
+      result.recordId ||
+      null,
+  };
 }
 
-export const isLiveBackend = Boolean(BASE);
+export const isLiveBackend = true;

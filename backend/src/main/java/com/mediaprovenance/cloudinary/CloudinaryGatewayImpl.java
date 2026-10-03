@@ -35,10 +35,13 @@ public class CloudinaryGatewayImpl implements CloudinaryGateway {
 
         try {
             Map<?, ?> uploadParams = ObjectUtils.asMap(
-                    "public_id", publicId,
-                    "resource_type", "image",
-                    "context", "media_id=" + mediaId + "|filename=" + sanitizeFilename(filename)
+                "public_id", publicId,
+                "resource_type", "image",
+                "context", "media_id=" + mediaId + "|filename=" + sanitizeFilename(filename)
             );
+
+
+
 
             Map<?, ?> result = cloudinary.uploader().upload(bytes, uploadParams);
             return extractUploadResult(result, publicId);
@@ -178,10 +181,20 @@ public class CloudinaryGatewayImpl implements CloudinaryGateway {
     }
 
     private String extractTagsJson(Map<?, ?> result) {
-        if (result == null || !result.containsKey("info")) {
+        if (result == null) {
             return "[]";
         }
+
+        Object tags = result.get("tags");
+        if (tags != null) {
+            return tags.toString();
+        }
+
         Object info = result.get("info");
-        return info != null ? info.toString() : "[]";
+        if (info != null) {
+            return info.toString();
+        }
+
+        return "[]";
     }
 }

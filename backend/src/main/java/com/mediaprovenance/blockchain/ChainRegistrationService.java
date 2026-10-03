@@ -11,38 +11,63 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Extracted from MediaService so Spring's AOP proxy can intercept the @Async annotation.
- * Self-invocation within the same bean bypasses the proxy and @Async becomes a no-op.
+ * Handles asynchronous blockchain registration.
+ *
+ * MediaService is responsible for triggering this service after its
+ * database transaction has committed.
+ *
+ * Keeping @Async in a separate Spring bean allows Spring's AOP proxy
+ * to execute the method asynchronously.
  */
 @Service
 public class ChainRegistrationService {
 
-    private static final Logger log = LoggerFactory.getLogger(ChainRegistrationService.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(ChainRegistrationService.class);
 
     private final ProvenanceRecordRepository provenanceRepository;
     private final BlockchainWriteRetryService blockchainWriteRetryService;
 
-    public ChainRegistrationService(ProvenanceRecordRepository provenanceRepository,
-                                    BlockchainWriteRetryService blockchainWriteRetryService) {
+    public ChainRegistrationService(
+            ProvenanceRecordRepository provenanceRepository,
+            BlockchainWriteRetryService blockchainWriteRetryService) {
+
         this.provenanceRepository = provenanceRepository;
         this.blockchainWriteRetryService = blockchainWriteRetryService;
     }
 
     /**
-     * Register a hash on the blockchain asynchronously.
-     * Called after the upload/transform transaction has committed, so the ProvenanceRecord is already persisted.
-     * In MOCK mode this completes instantly; in HTTP mode it may block for up to 120 s.
+     * Register a media hash on the blockchain asynchronously.
+     *
+     * This method is called by MediaService after the database transaction
+     * has committed, so the ProvenanceRecord should already exist.
      */
     @Async
-    public void registerAsync(UUID provenanceId, byte[] fileBytes, String operation, String previousHash) {
-        ProvenanceRecord provenance = provenanceRepository.findById(provenanceId).orElse(null);
+    public void registerAsync(
+            UUID provenanceId,
+            byte[] fileBytes,
+            String operation,
+            String previousHash) {
+
+        ProvenanceRecord provenance =
+                provenanceRepository.findById(provenanceId).orElse(null);
+
         if (provenance == null) {
-            log.error("Cannot register on chain: ProvenanceRecord not found [{}]", provenanceId);
+            log.error(
+                    "Cannot register on chain: ProvenanceRecord not found [{}]",
+                    provenanceId
+            );
             return;
         }
 
         try {
-            BlockchainRecord chainRecord = blockchainWriteRetryService.register(fileBytes, operation, previousHash);
+
+            BlockchainRecord chainRecord =
+                    blockchainWriteRetryService.register(
+                            fileBytes,
+                            operation,
+                            previousHash
+                    );
 
             provenance.setChainStatus("CONFIRMED");
             provenance.setTxHash(chainRecord.getTxHash());
@@ -50,18 +75,39 @@ public class ChainRegistrationService {
             provenance.setExplorerUrl(chainRecord.getExplorerUrl());
             provenance.setConfirmedAt(Instant.now());
             provenance.setAttempts(provenance.getAttempts() + 1);
+
             provenanceRepository.save(provenance);
-            log.info("Chain registration CONFIRMED for provenance [{}], txHash [{}]", provenanceId, chainRecord.getTxHash());
+
+            log.info(
+                    "Blockchain registration CONFIRMED for provenance [{}], tx [{}]",
+                    provenanceId,
+                    chainRecord.getTxHash()
+            );
+
         } catch (Exception e) {
-            log.error("Chain registration FAILED for provenance [{}]: {}", provenanceId, e.getMessage());
+
+            log.error(
+                    "Chain registration FAILED for provenance [{}]: {}",
+                    provenanceId,
+                    e.getMessage(),
+                    e
+            );
+
             provenance.setChainStatus("FAILED");
-            provenance.setErrorMessage(truncate(e.getMessage(), 15000));
-            provenance.setAttempts(provenance.getAttempts() + 1);
+            provenance.setErrorMessage(
+                    truncate(e.getMessage(), 15000)
+            );
+            provenance.setAttempts(
+                    provenance.getAttempts() + 1
+            );
+
             provenanceRepository.save(provenance);
         }
     }
 
     private String truncate(String s, int maxLen) {
-        return s != null && s.length() > maxLen ? s.substring(0, maxLen) : s;
+        return s != null && s.length() > maxLen
+                ? s.substring(0, maxLen)
+                : s;
     }
 }

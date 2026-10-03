@@ -25,7 +25,7 @@ export default function Verify() {
     setResult(null);
     const res = await verifyMedia(f);
     setResult(res);
-    if (res.status === 'VERIFIED') setHistory(await getHistory(res.hash));
+    if (res.status === 'VERIFIED' && res.mediaId) setHistory(await getHistory(res.hash));
     else setHistory([]);
     setBusy(false);
   }
@@ -84,7 +84,7 @@ export default function Verify() {
             <span className={`verdict-dot ${result.status === 'VERIFIED' ? 'ok' : 'bad'}`} />
             {result.status === 'VERIFIED' ? 'Verified' : 'Mismatch'}
           </p>
-          <div className="row"><span>Fingerprint</span><span>{short(result.hash)}</span></div>
+          <div className="row"><span>Fingerprint</span><span>{short(result.hash || result.currentHash || result.registeredHash)}</span></div>
           {result.record && (
             <>
               <div className="row"><span>Operation</span><span>{result.record.operation}</span></div>

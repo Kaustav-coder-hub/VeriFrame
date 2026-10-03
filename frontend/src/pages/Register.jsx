@@ -1,163 +1,555 @@
 import { useRef, useState } from 'react';
-import { registerOriginal, registerVersion, getHistory, isLiveBackend } from '../lib/api';
+import {
+  registerOriginal,
+  registerVersion,
+  getHistory,
+  getMediaPassport,
+  isLiveBackend,
+} from '../lib/api';
 
-const OPERATIONS = ['CROP', 'BG_REMOVAL', 'AI_ENHANCE', 'OPTIMIZE'];
+const OPERATIONS = ['CROP', 'BG_REMOVAL'];
 
 function short(hash) {
-  return hash ? `${hash.slice(0, 10)}…${hash.slice(-6)}` : '';
+  return hash ? `${hash.slice(0, 10)}…${hash.slice(-6)}` : '—';
 }
 
 function fmtTime(iso) {
-  return new Date(iso).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  if (!iso) return 'Pending';
+
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Pending';
+  }
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
 export default function Register() {
   const [file, setFile] = useState(null);
   const [drag, setDrag] = useState(false);
-  const [stage, setStage] = useState('idle'); // idle | analyzing | registered
+  const [stage, setStage] = useState('idle');
   const [record, setRecord] = useState(null);
   const [history, setHistory] = useState([]);
   const [op, setOp] = useState(OPERATIONS[0]);
-  const [versionFile, setVersionFile] = useState(null);
   const [busy, setBusy] = useState(false);
+
   const inputRef = useRef(null);
-  const versionInputRef = useRef(null);
+
+  // ─────────────────────────────────────────────
+  // REGISTER ORIGINAL
+  // ─────────────────────────────────────────────
 
   async function handleFile(f) {
+    if (!f) return;
+
     setFile(f);
     setStage('analyzing');
     setBusy(true);
-    const result = await registerOriginal(f, 'ORIGINAL');
-    setRecord(result);
-    setHistory(await getHistory(result.hash));
-    setStage('registered');
-    setBusy(false);
+
+    try {
+      const result = await registerOriginal(f);
+
+      if (!result?.mediaId) {
+        throw new Error('Backend did not return a mediaId.');
+      }
+
+      // Get complete media passport
+      const passport = await getMediaPassport(result.mediaId);
+
+      setRecord({
+        ...result,
+        ...passport,
+      });
+
+      // Get provenance timeline
+      const provenance = await getHistory(result.mediaId);
+
+      setHistory(provenance || []);
+      setStage('registered');
+    } catch (error) {
+      console.error('Registration failed:', error);
+
+      alert(
+        `Registration failed: ${
+          error?.message || 'Unknown error'
+        }`
+      );
+
+      setStage('idle');
+      setFile(null);
+    } finally {
+      setBusy(false);
+    }
   }
+
+  // ─────────────────────────────────────────────
+  // CREATE DERIVED VERSION
+  // ─────────────────────────────────────────────
 
   async function handleVersion() {
-    if (!versionFile || !record) return;
+    if (!record?.mediaId || busy) return;
+
     setBusy(true);
-    const result = await registerVersion(versionFile, record.hash, op);
-    setRecord(result);
-    setHistory(await getHistory(result.hash));
-    setVersionFile(null);
-    setBusy(false);
+
+    try {
+      // Backend performs the Cloudinary transformation.
+      const result = await registerVersion(
+        record.mediaId,
+        op
+      );
+
+      // Refresh complete passport
+      const passport = await getMediaPassport(
+        record.mediaId
+      );
+
+      setRecord({
+        ...record,
+        ...passport,
+        ...result,
+      });
+
+      // Refresh provenance timeline
+      const provenance = await getHistory(
+        record.mediaId
+      );
+
+      setHistory(provenance || []);
+    } catch (error) {
+      console.error('Transformation failed:', error);
+
+      alert(
+        `Transformation failed: ${
+          error?.message || 'Unknown error'
+        }`
+      );
+    } finally {
+      setBusy(false);
+    }
   }
+
+  // ─────────────────────────────────────────────
+  // RESET
+  // ─────────────────────────────────────────────
 
   function reset() {
-    setFile(null); setRecord(null); setHistory([]); setStage('idle'); setVersionFile(null);
+    setFile(null);
+    setRecord(null);
+    setHistory([]);
+    setStage('idle');
+    setOp(OPERATIONS[0]);
+
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
   }
 
+  // ─────────────────────────────────────────────
+  // CURRENT DATA
+  // ─────────────────────────────────────────────
+
+  const latest =
+    history.length > 0
+      ? history[history.length - 1]
+      : null;
+
+  const originalVersion =
+    record?.originalVersion || null;
+
+  const currentHash =
+    latest?.hash ||
+    latest?.mediaHash ||
+    record?.hash ||
+    record?.currentHash ||
+    originalVersion?.sha256Hash ||
+    null;
+
+  const currentOperation =
+    latest?.operation ||
+    record?.operation ||
+    originalVersion?.operation ||
+    'NONE';
+
+  const txHash =
+    latest?.txHash ||
+    record?.txHash ||
+    null;
+
+  const chainStatus =
+    latest?.chainStatus ||
+    null;
+
   return (
-    <div>
+    <div className="register-page">
+      {/* ─────────────────────────────────────────
+          HEADER
+      ───────────────────────────────────────── */}
+
       <section style={{ padding: '4px 0 28px' }}>
-        <h1 style={{ fontFamily: 'var(--serif)', fontSize: 30, margin: '0 0 6px', fontWeight: 500 }}>
+        <h1
+          style={{
+            fontFamily: 'var(--serif)',
+            fontSize: 30,
+            margin: '0 0 6px',
+            fontWeight: 500,
+          }}
+        >
           Register media
         </h1>
-        <p className="muted" style={{ margin: 0, fontSize: 15 }}>
-          Upload a file to fingerprint it and open a provenance record.
-          {!isLiveBackend && ' Running in demo mode — connect VITE_API_URL to use the live chain.'}
+
+        <p
+          className="muted"
+          style={{
+            margin: 0,
+            fontSize: 15,
+          }}
+        >
+          Upload a file to fingerprint it and open a
+          provenance record.
+          {!isLiveBackend &&
+            ' Running in demo mode — connect VITE_API_URL to use the live chain.'}
         </p>
       </section>
+
+      {/* ─────────────────────────────────────────
+          UPLOAD
+      ───────────────────────────────────────── */}
 
       {stage === 'idle' && (
         <div
           className={`dropzone${drag ? ' drag' : ''}`}
-          onClick={() => inputRef.current.click()}
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => {
-            e.preventDefault(); setDrag(false);
-            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+            e.preventDefault();
+            setDrag(false);
+
+            const droppedFile =
+              e.dataTransfer.files?.[0];
+
+            if (droppedFile) {
+              handleFile(droppedFile);
+            }
           }}
           role="button"
           tabIndex={0}
         >
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 500 }}>Drop an image or video, or click to browse</p>
-          <p className="hint">Sent to Cloudinary for storage; nothing leaves your device until you drop a file here.</p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 15,
+              fontWeight: 500,
+            }}
+          >
+            Drop an image, or click to browse
+          </p>
+
+          <p className="hint">
+            The original file is fingerprinted before
+            Cloudinary processing.
+          </p>
+
           <input
             ref={inputRef}
             type="file"
-            accept="image/*,video/*"
-            onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])}
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const selectedFile =
+                e.target.files?.[0];
+
+              if (selectedFile) {
+                handleFile(selectedFile);
+              }
+            }}
           />
         </div>
       )}
 
-      {stage !== 'idle' && (
+      {/* ─────────────────────────────────────────
+          ANALYZING
+      ───────────────────────────────────────── */}
+
+      {stage === 'analyzing' && (
         <div className="card">
-          <div className="file-row">
-            <div>
-              <div className="name">{file?.name}</div>
-              <div className="meta">{file ? `${(file.size / 1024).toFixed(0)} KB` : ''}</div>
-            </div>
-            {stage === 'analyzing'
-              ? <span className="badge pending">Fingerprinting…</span>
-              : <button className="btn btn-ghost" onClick={reset}>Start over</button>}
-          </div>
+          <p style={{ margin: 0 }}>
+            Registering{' '}
+            <strong>{file?.name}</strong>…
+          </p>
+
+          <p className="hint">
+            Uploading to Cloudinary, generating the
+            fingerprint and creating the provenance record.
+          </p>
         </div>
       )}
 
+      {/* ─────────────────────────────────────────
+          REGISTERED
+      ───────────────────────────────────────── */}
+
       {stage === 'registered' && record && (
         <>
-          <div className="seal-card" style={{ marginTop: 14 }}>
-            <p className="verdict-label">Provenance record</p>
-            <p className="verdict">
-              <span className="verdict-dot ok" />
-              Registered
-            </p>
-            <div className="row"><span>Operation</span><span>{history[history.length - 1]?.operation || 'ORIGINAL'}</span></div>
-            <div className="row"><span>Fingerprint</span><span>{short(record.hash)}</span></div>
-            {record.previousHash && <div className="row"><span>Derived from</span><span>{short(record.previousHash)}</span></div>}
-            <div className="row"><span>Transaction</span><span>{short(record.txHash)}</span></div>
-          </div>
+          {/* FILE CARD */}
 
-          <div className="card">
-            <p className="card-title">Create a derived version</p>
-            <p className="card-sub">Simulates an AI transformation or edit, then links it to this record</p>
-            <div className="chip-row">
-              {OPERATIONS.map((o) => (
-                <button key={o} className={`chip${op === o ? ' active' : ''}`} onClick={() => setOp(o)}>
-                  {o.replace('_', ' ').toLowerCase()}
-                </button>
-              ))}
-            </div>
-            <div className="field">
-              <label>New file for this version</label>
-              <div className="file-row" style={{ cursor: 'pointer' }} onClick={() => versionInputRef.current.click()}>
-                <span className="name">{versionFile ? versionFile.name : 'Choose a file…'}</span>
-                <span className="meta">{versionFile ? `${(versionFile.size / 1024).toFixed(0)} KB` : ''}</span>
+          <div
+            className="card"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <strong>{file?.name}</strong>
+
+              <div className="hint">
+                {file
+                  ? `${Math.round(
+                      file.size / 1024
+                    )} KB`
+                  : ''}
               </div>
-              <input
-                ref={versionInputRef}
-                type="file"
-                style={{ display: 'none' }}
-                onChange={(e) => e.target.files[0] && setVersionFile(e.target.files[0])}
-              />
             </div>
-            <button className="btn btn-primary" style={{ marginTop: 16 }} disabled={!versionFile || busy} onClick={handleVersion}>
-              {busy ? <span className="spinner" /> : null} Register version
+
+            <button
+              className="btn btn-ghost"
+              onClick={reset}
+              disabled={busy}
+            >
+              Start over
             </button>
           </div>
 
-          <div className="card">
-            <p className="card-title">Provenance timeline</p>
-            <p className="card-sub">Original to current — oldest first</p>
-            {history.length === 0 ? (
-              <p className="center-note">No history yet.</p>
-            ) : (
-              <div className="lineage">
-                {history.map((h, i) => (
-                  <div key={h.mediaHash} className={`lineage-item${i === 0 ? ' origin' : ''}`}>
-                    <div className="lineage-op">{h.operation}</div>
-                    <div className="lineage-meta">{fmtTime(h.timestamp)} · {short(h.mediaHash)}</div>
-                  </div>
-                ))}
+          {/* ─────────────────────────────────────
+              PROVENANCE RECORD
+          ───────────────────────────────────── */}
+
+          <section
+            className="card"
+            style={{
+              background: '#1c1b18',
+              color: '#f5f2ea',
+              marginTop: 10,
+            }}
+          >
+            <p
+              style={{
+                margin: '0 0 6px',
+                fontSize: 12,
+                opacity: 0.65,
+              }}
+            >
+              Provenance record
+            </p>
+
+            <h2
+              style={{
+                margin: '0 0 18px',
+                fontFamily: 'var(--serif)',
+                fontWeight: 500,
+              }}
+            >
+              <span
+                style={{
+                  color:
+                    chainStatus === 'FAILED'
+                      ? '#e25c5c'
+                      : '#45e27a',
+                }}
+              >
+                ●
+              </span>{' '}
+              {chainStatus === 'FAILED'
+                ? 'Registration failed'
+                : 'Registered'}
+            </h2>
+
+            <div className="detail-row">
+              <span>Operation</span>
+              <strong>{currentOperation}</strong>
+            </div>
+
+            <div className="detail-row">
+              <span>Fingerprint</span>
+              <strong>
+                {short(currentHash)}
+              </strong>
+            </div>
+
+            <div className="detail-row">
+              <span>Transaction</span>
+              <strong>
+                {short(txHash)}
+              </strong>
+            </div>
+
+            {chainStatus && (
+              <div className="detail-row">
+                <span>Blockchain</span>
+                <strong>{chainStatus}</strong>
               </div>
             )}
-          </div>
+          </section>
+
+          {/* ─────────────────────────────────────
+              DERIVED VERSION
+          ───────────────────────────────────── */}
+
+          <section className="card">
+            <h3 style={{ marginTop: 0 }}>
+              Create a derived version
+            </h3>
+
+            <p className="hint">
+              Apply a Cloudinary transformation and link
+              the resulting fingerprint to this record.
+            </p>
+
+            <div className="chips">
+              {OPERATIONS.map((operation) => (
+                <button
+                  key={operation}
+                  className={
+                    op === operation
+                      ? 'chip active'
+                      : 'chip'
+                  }
+                  onClick={() => setOp(operation)}
+                  disabled={busy}
+                >
+                  {operation.replace('_', ' ').toLowerCase()}
+                </button>
+              ))}
+            </div>
+
+            <div
+              className="card"
+              style={{
+                marginTop: 14,
+                padding: '12px 14px',
+              }}
+            >
+              {op === 'CROP'
+                ? 'Cloudinary crop transformation'
+                : 'Cloudinary background removal transformation'}
+            </div>
+
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: 12 }}
+              onClick={handleVersion}
+              disabled={busy}
+            >
+              {busy
+                ? 'Processing…'
+                : 'Register version'}
+            </button>
+          </section>
+
+          {/* ─────────────────────────────────────
+              PROVENANCE TIMELINE
+          ───────────────────────────────────── */}
+
+          <section className="card">
+            <h3 style={{ marginTop: 0 }}>
+              Provenance timeline
+            </h3>
+
+            <p className="hint">
+              Original to current — oldest first
+            </p>
+
+            {history.length === 0 ? (
+              <p className="hint">
+                Waiting for provenance data…
+              </p>
+            ) : (
+              <div>
+                {history.map((h, index) => {
+                  const hash =
+                    h.hash ||
+                    h.mediaHash ||
+                    null;
+
+                  return (
+                    <div
+                      key={
+                        h.id ||
+                        `${hash}-${index}`
+                      }
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        padding: '12px 0',
+                        borderBottom:
+                          index ===
+                          history.length - 1
+                            ? 'none'
+                            : '1px solid var(--border)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background:
+                            h.chainStatus ===
+                            'CONFIRMED'
+                              ? '#45e27a'
+                              : h.chainStatus ===
+                                'FAILED'
+                              ? '#e25c5c'
+                              : '#d79b3f',
+                          marginTop: 5,
+                          flexShrink: 0,
+                        }}
+                      />
+
+                      <div>
+                        <strong>
+                          {h.operation || 'NONE'}
+                        </strong>
+
+                        <div className="hint">
+                          {fmtTime(h.createdAt)}
+                        </div>
+
+                        <div
+                          className="hint"
+                          style={{
+                            fontFamily:
+                              'monospace',
+                            marginTop: 3,
+                          }}
+                        >
+                          {short(hash)}
+                        </div>
+
+                        {h.chainStatus && (
+                          <div className="hint">
+                            Blockchain:{' '}
+                            {h.chainStatus}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </>
       )}
     </div>

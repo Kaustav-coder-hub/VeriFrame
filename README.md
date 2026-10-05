@@ -533,12 +533,10 @@ You will also need:
 # 12. Clone the Repository
 
 ``` bash
-git clone <PUBLIC_GITHUB_REPOSITORY_URL>
+git clone https://github.com/Kaustav-coder-hub/VeriFrame.git
 cd VeriFrame
 ```
 
-Replace `<PUBLIC_GITHUB_REPOSITORY_URL>` with the final public
-repository URL.
 
 ------------------------------------------------------------------------
 
@@ -1058,37 +1056,7 @@ Even a small change to the file changes its SHA-256 fingerprint.
 
 ------------------------------------------------------------------------
 
-# 22. Judge Demo Flow
-
-For a short demonstration:
-
-``` text
-00:00 — Introduce the media provenance problem
-
-00:20 — Open VeriFrame
-
-00:40 — Upload original image
-
-01:00 — Show Cloudinary processing
-
-01:20 — Show SHA-256 + blockchain confirmation
-
-01:40 — Apply CROP
-
-02:00 — Apply BG_REMOVAL
-
-02:20 — Show provenance timeline
-
-02:40 — Verify original → VERIFIED
-
-03:00 — Modify image → MISMATCH
-
-03:20 — Summarize Cloudinary + SHA-256 + blockchain
-```
-
-------------------------------------------------------------------------
-
-# 23. Blockchain Design
+# 22. Blockchain Design
 
 The smart contract is:
 
@@ -1133,7 +1101,7 @@ This creates a linked provenance history.
 
 ------------------------------------------------------------------------
 
-# 24. Why SHA-256?
+# 23. Why SHA-256?
 
 SHA-256 generates a deterministic fingerprint from the exact file bytes.
 
@@ -1168,7 +1136,7 @@ registered version.
 
 ------------------------------------------------------------------------
 
-# 25. API Overview
+# 24. API Overview
 
 ## Backend
 
@@ -1207,7 +1175,7 @@ GET  /api/history/:hash
 
 ------------------------------------------------------------------------
 
-# 26. Testing
+# 25. Testing
 
 ## Blockchain
 
@@ -1246,7 +1214,7 @@ npm run build
 
 ------------------------------------------------------------------------
 
-# 27. Security
+# 26. Security
 
 ## Environment and Secrets
 
@@ -1284,7 +1252,7 @@ files.
 
 ------------------------------------------------------------------------
 
-# 28. Troubleshooting
+# 27. Troubleshooting
 
 ## Backend does not start
 
@@ -1357,7 +1325,7 @@ Verify that you are using the exact registered file.
 
 ------------------------------------------------------------------------
 
-# 29. Why VeriFrame?
+# 28. Why VeriFrame?
 
 VeriFrame connects three important layers:
 
@@ -1381,31 +1349,32 @@ workflow.
 
 ------------------------------------------------------------------------
 
-# 30. Links
+# 29. Links
 
   -------------------------------------------------------------------------------------------------
   Resource                            URL
   ----------------------------------- -------------------------------------------------------------
-  Live Demo                           https://veriframe-frontend-x8u4.onrender.com
+  Live Demo                           `https://veriframe-frontend-x8u4.onrender.com`
 
-  Backend API                         https://veriframe-backend-java.onrender.com
+  Backend API                         `https://veriframe-backend-java.onrender.com`
 
-  Backend Health                      https://veriframe-backend-java.onrender.com/actuator/health
+  Backend Health                      `https://veriframe-backend-java.onrender.com/actuator/health`
 
-  Blockchain Service                  https://veriframe-o9gg.onrender.com
+  Blockchain Service                  `https://veriframe-o9gg.onrender.com`
 
-  Blockchain Health                   https://veriframe-o9gg.onrender.com/health
+  Blockchain Health                   `https://veriframe-o9gg.onrender.com/health`
 
-  GitHub                              `<PUBLIC_GITHUB_URL>`
+  GitHub                              `https://github.com/Kaustav-coder-hub/VeriFrame.git`
 
-  Demo Video                          `<DEMO_VIDEO_URL>`
+  Demo Video                          `https://drive.google.com/drive/folders/1iBY_1-JDBuI3GsB7yt_quaw1bmXA6qCB?usp=drive_link`
 
-  LinkedIn Project Post               `<LINKEDIN_POST_URL>`
-  -------------------------------------------------------------------------------------------------
+  LinkedIn Project Post               `https://lnkd.in/p/drA5QjPd`
+
+
 
 ------------------------------------------------------------------------
 
-# 31. Team
+# 30. Team
 
 ## VeriFrame
 
@@ -1413,12 +1382,11 @@ workflow.
 
 Team Members:
 
--   `<TEAM_MEMBER_1>`
--   `<TEAM_MEMBER_2>`
--   `<TEAM_MEMBER_3>`
--   `<TEAM_MEMBER_4>`
+-   `Kaustav Chakraborty`
+-   `Gunjan Roy`
+-   `Srijita Dutta`
+-   `Suryandu Ganguly`
 
-Replace the placeholders with the final team details.
 
 ------------------------------------------------------------------------
 

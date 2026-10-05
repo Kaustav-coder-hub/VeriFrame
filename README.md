@@ -550,7 +550,6 @@ backend, and blockchain service.
 Create them from the supplied examples:
 
 ``` bash
-cp .env.example .env
 cp frontend/.env.example frontend/.env
 cp backend/.env.example backend/.env
 cp blockchain/.env.example blockchain/.env

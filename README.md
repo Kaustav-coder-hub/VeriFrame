@@ -1,37 +1,48 @@
-# VeriFrame — AI-Powered Media Provenance & Verification
+# VeriFrame --- AI-Powered Media Provenance & Verification
 
-> **Cloudinary AI Hackathon 2026 — Pixels to Products**  
-> **Track 1 — AI Media Pipelines**
+> **Cloudinary AI Hackathon 2026 --- Pixels to Products**\
+> **Track 1 --- AI Media Pipelines**
 
-VeriFrame is an AI-powered media provenance and verification platform that helps users verify the authenticity and transformation history of digital media.
+VeriFrame is an AI-powered media provenance and verification platform
+that helps users verify the authenticity and transformation history of
+digital media.
 
-It combines **Cloudinary**, **SHA-256 fingerprinting**, a **Spring Boot backend**, and a **blockchain-backed provenance layer** to create a verifiable chain from an original media file to its transformed versions.
+It combines **Cloudinary**, **SHA-256 fingerprinting**, a **Spring Boot
+backend**, and a **blockchain-backed provenance layer** to create a
+verifiable chain from an original media file to its transformed
+versions.
 
----
+------------------------------------------------------------------------
 
 ## 1. Problem Statement
 
-Digital images can be copied, modified, transformed, and redistributed without an easy way to determine:
+Digital images can be copied, modified, transformed, and redistributed
+without an easy way to determine:
 
-- Where a particular file came from
-- Whether a file is the exact registered version
-- What transformations were applied
-- Which version was derived from which original
-- Whether the current file has been modified after registration
+-   Where a particular file came from
+-   Whether a file is the exact registered version
+-   What transformations were applied
+-   Which version was derived from which original
+-   Whether the current file has been modified after registration
 
-Traditional file metadata can be removed or changed, and storing provenance only in a centralized database does not provide an independently verifiable record.
+Traditional file metadata can be removed or changed, and storing
+provenance only in a centralized database does not provide an
+independently verifiable record.
 
-VeriFrame addresses this problem by combining **cryptographic file fingerprinting with Cloudinary media processing and blockchain-backed provenance records**.
+VeriFrame addresses this problem by combining **cryptographic file
+fingerprinting with Cloudinary media processing and blockchain-backed
+provenance records**.
 
----
+------------------------------------------------------------------------
 
 ## 2. Our Solution
 
-VeriFrame creates a provenance record for every registered media version.
+VeriFrame creates a provenance record for every registered media
+version.
 
 The core workflow is:
 
-```text
+``` text
 Upload Media
      ↓
 Cloudinary
@@ -51,7 +62,7 @@ Provenance Timeline
 
 For example:
 
-```text
+``` text
 ORIGINAL
    │
    ▼
@@ -61,68 +72,100 @@ CROP
 BACKGROUND REMOVAL
 ```
 
-Each version receives its own SHA-256 fingerprint and is linked to its parent version.
+Each version receives its own SHA-256 fingerprint and is linked to its
+parent version.
 
 This allows VeriFrame to answer:
 
-> **Is this exact file a registered version, and what is its transformation history?**
+> **Is this exact file a registered version, and what is its
+> transformation history?**
 
----
+------------------------------------------------------------------------
 
 ## 3. Hackathon Track
 
-### Track 1 — AI Media Pipelines
+### Track 1 --- AI Media Pipelines
 
 VeriFrame is built around an active media pipeline using Cloudinary.
 
 The application:
 
-- Ingests uploaded media
-- Uses Cloudinary for media management
-- Uses Cloudinary AI/media capabilities for analysis and processing
-- Creates transformed media versions
-- Generates cryptographic fingerprints for the resulting files
-- Records provenance relationships
-- Verifies media against registered fingerprints
-- Displays the complete provenance timeline
+-   Ingests uploaded media
+-   Uses Cloudinary for media management
+-   Uses Cloudinary AI/media capabilities for analysis and processing
+-   Creates transformed media versions
+-   Generates cryptographic fingerprints for the resulting files
+-   Records provenance relationships
+-   Verifies media against registered fingerprints
+-   Displays the complete provenance timeline
 
-Cloudinary is therefore an active part of the product workflow rather than simply being used as static file storage.
+Cloudinary is therefore an active part of the product workflow rather
+than simply being used as static file storage.
 
----
-
+------------------------------------------------------------------------
 
 ## 🚀 Live Demo
 
-The complete VeriFrame application is deployed on Render and can be tested directly without setting up the project locally.
+The complete VeriFrame application is deployed on Render and can be
+tested directly without setting up the project locally.
 
 ### Production URLs
 
-| Component | Live URL | Purpose |
-|---|---|---|
-| **Frontend / Live Demo** | https://veriframe-frontend-x8u4.onrender.com | Main VeriFrame web application |
-| **Backend API** | https://veriframe-backend-java.onrender.com | Spring Boot REST API |
-| **Backend Health** | https://veriframe-backend-java.onrender.com/actuator/health | Backend + database health check |
-| **Blockchain Service** | https://veriframe-o9gg.onrender.com | Blockchain provenance API |
-| **Blockchain Health** | https://veriframe-o9gg.onrender.com/health | Blockchain service health check |
+  -------------------------------------------------------------------------------------------------------------
+  Component               Live URL                                                      Purpose
+  ----------------------- ------------------------------------------------------------- -----------------------
+  **Frontend / Live       https://veriframe-frontend-x8u4.onrender.com                  Main VeriFrame web
+  Demo**                                                                                application
+
+  **Backend API**         https://veriframe-backend-java.onrender.com                   Spring Boot REST API
+
+  **Backend Health**      https://veriframe-backend-java.onrender.com/actuator/health   Backend + database
+                                                                                        health check
+
+  **Blockchain Service**  https://veriframe-o9gg.onrender.com                           Blockchain provenance
+                                                                                        API
+
+  **Blockchain Health**   https://veriframe-o9gg.onrender.com/health                    Blockchain service
+                                                                                        health check
+  -------------------------------------------------------------------------------------------------------------
+
+### Live Application Configuration
+
+The public demo is already configured with its required environment
+variables on Render. Reviewers should use the live URLs above rather
+than attempting to connect the public frontend to localhost.
+
+For local development, use the environment configuration in Section 13.
+The local `MOCK` blockchain mode is available only as a fallback/testing
+option; use `BLOCKCHAIN_MODE=HTTP` when connecting the backend to the
+real blockchain service.
 
 ### Judge Quick Start
 
-1. Open the **[VeriFrame Live Demo](https://veriframe-frontend-x8u4.onrender.com)**.
-2. Upload/register an original image.
-3. Wait for the provenance status to become **CONFIRMED**.
-4. Create transformations such as **CROP** and **BACKGROUND REMOVAL**.
-5. Open the provenance/history view to see the chain:
+1.  Open the **[VeriFrame Live
+    Demo](https://veriframe-frontend-x8u4.onrender.com)**.
+2.  Upload/register an original image.
+3.  Wait for the provenance status to become **CONFIRMED**.
+4.  Create transformations such as **CROP** and **BACKGROUND REMOVAL**.
+5.  Open the provenance/history view to see the chain:
 
-```text
+``` text
 ORIGINAL → CROP → BACKGROUND REMOVAL
 ```
 
-6. Use **Verify** with the exact registered file and confirm that the result is **VERIFIED**.
-7. Modify the image or use an unregistered file and verify it again. The expected result is **MISMATCH**.
+6.  Use **Verify** with the exact registered file and confirm that the
+    result is **VERIFIED**.
+7.  Modify the image or use an unregistered file and verify it again.
+    The expected result is **MISMATCH**.
 
-> **Note about Render cold starts:** The deployed backend and blockchain services may take a short time to wake up after a period of inactivity on Render's free infrastructure. If the first request takes longer than expected, wait for the service to wake and retry the request.
+> **Note about Render cold starts:** The deployed backend and blockchain
+> services may take a short time to wake up after a period of inactivity
+> on Render's free infrastructure. If the first request takes longer
+> than expected, wait for the service to wake and retry the request.
 
-For the most reliable judging experience, open the live demo and the two health endpoints shortly before the judging session and perform one complete upload → transformation → verification flow.
+For the most reliable judging experience, open the live demo and the two
+health endpoints shortly before the judging session and perform one
+complete upload → transformation → verification flow.
 
 # 4. Key Features
 
@@ -134,18 +177,18 @@ Upload an image and register its exact file fingerprint.
 
 Use Cloudinary for:
 
-- Media upload
-- Media management
-- AI/media analysis
-- Image transformations
-- Media delivery
+-   Media upload
+-   Media management
+-   AI/media analysis
+-   Image transformations
+-   Media delivery
 
 ### ✂️ Media Transformations
 
 Create derived versions such as:
 
-- Crop
-- Background removal
+-   Crop
+-   Background removal
 
 ### 🔐 SHA-256 Fingerprinting
 
@@ -155,13 +198,14 @@ Even a small change to the file produces a different hash.
 
 ### ⛓️ Blockchain Provenance
 
-Registered fingerprints and their relationships are recorded through the `MediaProvenance` smart contract.
+Registered fingerprints and their relationships are recorded through the
+`MediaProvenance` smart contract.
 
 ### 🔗 Parent-Child Versioning
 
 Derived media references the fingerprint of its parent:
 
-```text
+``` text
 Original Hash
      ↓
 Crop Hash
@@ -171,47 +215,49 @@ Background Removal Hash
 
 ### ✅ Exact Verification
 
-Upload a file and VeriFrame checks whether its fingerprint matches a registered record.
+Upload a file and VeriFrame checks whether its fingerprint matches a
+registered record.
 
 ### 📜 Provenance Timeline
 
 The application displays:
 
-- Operation
-- Timestamp
-- SHA-256 hash
-- Record ID
-- Parent hash
-- Blockchain status
-- Transaction hash
-- Confirmation time
-- Explorer link
+-   Operation
+-   Timestamp
+-   SHA-256 hash
+-   Record ID
+-   Parent hash
+-   Blockchain status
+-   Transaction hash
+-   Confirmation time
+-   Explorer link
 
 ### 🚨 Tamper Detection
 
-If a registered file is modified, its SHA-256 fingerprint changes and VeriFrame can identify the mismatch.
+If a registered file is modified, its SHA-256 fingerprint changes and
+VeriFrame can identify the mismatch.
 
----
+------------------------------------------------------------------------
 
 # 5. Verification Results
 
 VeriFrame can return statuses such as:
 
-| Status | Meaning |
-|---|---|
-| `VERIFIED` | Exact file hash is registered |
-| `MISMATCH` | File does not match the expected registered version |
-| `NOT_FOUND` | No provenance record exists for the hash |
-| `PENDING` | Blockchain registration is still processing |
-| `PROVENANCE_FAILED` | Blockchain provenance registration failed |
+  Status                Meaning
+  --------------------- -----------------------------------------------------
+  `VERIFIED`            Exact file hash is registered
+  `MISMATCH`            File does not match the expected registered version
+  `NOT_FOUND`           No provenance record exists for the hash
+  `PENDING`             Blockchain registration is still processing
+  `PROVENANCE_FAILED`   Blockchain provenance registration failed
 
----
+------------------------------------------------------------------------
 
 # 6. How VeriFrame Works
 
 ## Original Media
 
-```text
+``` text
 Image
   ↓
 SHA-256
@@ -223,7 +269,7 @@ Blockchain Record
 
 ## Derived Media
 
-```text
+``` text
 Original
    │
    ├── CROP
@@ -241,7 +287,7 @@ Original
 
 Each derived version stores the hash of its parent.
 
----
+------------------------------------------------------------------------
 
 # 7. Cloudinary Integration
 
@@ -251,7 +297,7 @@ Cloudinary is a core component of the VeriFrame media pipeline.
 
 Uploaded media is sent through the backend to Cloudinary.
 
-```text
+``` text
 User
  ↓
 React Frontend
@@ -263,13 +309,15 @@ Cloudinary
 
 ## AI / Media Analysis
 
-Cloudinary AI/media capabilities are used to analyze and process uploaded media.
+Cloudinary AI/media capabilities are used to analyze and process
+uploaded media.
 
 ## Transformations
 
-Cloudinary transformations are used to create derived media versions such as:
+Cloudinary transformations are used to create derived media versions
+such as:
 
-```text
+``` text
 Original
    ↓
 Crop
@@ -281,7 +329,7 @@ Background Removal
 
 After media processing, the resulting file is fingerprinted:
 
-```text
+``` text
 Cloudinary Output
        ↓
 Exact File Bytes
@@ -293,13 +341,14 @@ Parent / Child Relationship
 Blockchain
 ```
 
-This means Cloudinary participates directly in the actual product workflow.
+This means Cloudinary participates directly in the actual product
+workflow.
 
----
+------------------------------------------------------------------------
 
 # 8. System Architecture
 
-```text
+``` text
                        ┌────────────────────┐
                        │       USER         │
                        │ Upload / Verify    │
@@ -352,55 +401,55 @@ This means Cloudinary participates directly in the actual product workflow.
              └────────────────────┘
 ```
 
----
+------------------------------------------------------------------------
 
 # 9. Technology Stack
 
 ## Frontend
 
-- React
-- Vite
-- JavaScript
-- CSS
+-   React
+-   Vite
+-   JavaScript
+-   CSS
 
 ## Backend
 
-- Java 21
-- Spring Boot
-- Spring Security
-- Spring Data JPA
-- Flyway
-- H2 for local development
-- PostgreSQL-compatible database configuration
-- Cloudinary Java SDK
+-   Java 21
+-   Spring Boot
+-   Spring Security
+-   Spring Data JPA
+-   Flyway
+-   H2 for local development
+-   PostgreSQL-compatible database configuration
+-   Cloudinary Java SDK
 
 ## Media / AI
 
-- Cloudinary
-- Cloudinary AI/media capabilities
-- SHA-256
+-   Cloudinary
+-   Cloudinary AI/media capabilities
+-   SHA-256
 
 ## Blockchain
 
-- Solidity
-- Ethereum-compatible blockchain
-- ethers.js
-- Node.js
-- Express
-- Ganache for local blockchain testing
+-   Solidity
+-   Ethereum-compatible blockchain
+-   ethers.js
+-   Node.js
+-   Express
+-   Ganache for local blockchain testing
 
 ## Development
 
-- Git
-- GitHub
-- npm
-- Maven Wrapper
+-   Git
+-   GitHub
+-   npm
+-   Maven Wrapper
 
----
+------------------------------------------------------------------------
 
 # 10. Project Structure
 
-```text
+``` text
 VeriFrame/
 │
 ├── frontend/
@@ -447,137 +496,345 @@ VeriFrame/
 └── README.md
 ```
 
----
+------------------------------------------------------------------------
 
 # 11. Prerequisites
 
 Install the following:
 
-- Git
-- Node.js 20+
-- npm
-- Java 21
+-   Git
+-   Node.js 20+
+-   npm
+-   Java 21
 
 Check:
 
-```bash
+``` bash
 git --version
 node --version
 npm --version
 java --version
 ```
 
-The backend includes the Maven Wrapper, so a global Maven installation is not required.
+The backend includes the Maven Wrapper, so a global Maven installation
+is not required.
 
 You will also need:
 
-- A Cloudinary account
-- Cloudinary credentials
-- An Ethereum-compatible RPC endpoint for blockchain deployment
-- A test wallet/private key for the blockchain environment
+-   A Cloudinary account
+-   Cloudinary credentials
+-   An Ethereum-compatible RPC endpoint for blockchain deployment
+-   A test wallet/private key for the blockchain environment
 
 > **Never commit API secrets, passwords, or private keys to GitHub.**
 
----
+------------------------------------------------------------------------
 
 # 12. Clone the Repository
 
-```bash
+``` bash
 git clone <PUBLIC_GITHUB_REPOSITORY_URL>
 cd VeriFrame
 ```
 
-Replace `<PUBLIC_GITHUB_REPOSITORY_URL>` with the final public repository URL.
+Replace `<PUBLIC_GITHUB_REPOSITORY_URL>` with the final public
+repository URL.
 
----
+------------------------------------------------------------------------
 
 # 13. Environment Configuration
 
-Use the example environment files provided in the repository.
+VeriFrame uses separate environment files for the frontend, Spring Boot
+backend, and blockchain service.
 
-```bash
+Create them from the supplied examples:
+
+``` bash
 cp .env.example .env
 cp frontend/.env.example frontend/.env
 cp backend/.env.example backend/.env
 cp blockchain/.env.example blockchain/.env
 ```
 
-Configure the values for your environment.
+> **Important:** The values below document the required environment
+> variables and their purpose. Do not commit real secrets such as API
+> secrets, database passwords, RPC credentials, or wallet private keys
+> to GitHub.
 
----
+## Backend Environment
 
-## Cloudinary
+File:
 
-Configure:
-
-```env
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+``` text
+backend/.env
 ```
 
----
+Required configuration:
 
-## Frontend
+``` env
+SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=8080
 
-Configure the backend URL:
+SECURITY_API_KEY=YOUR_BACKEND_API_KEY
 
-```env
+FRONTEND_ORIGIN=http://localhost:5173,http://localhost:3000,https://veriframe-frontend-x8u4.onrender.com
+
+CLOUDINARY_CLOUD_NAME=fnugojab
+CLOUDINARY_API_KEY=831459923378871
+CLOUDINARY_API_SECRET=qEkCT--hUe6P3Z4DZd9rVkk-KaU
+CLOUDINARY_AUTO_TAGGING_CATEGORIZATION=aws_rek_tagging
+
+BLOCKCHAIN_MODE=HTTP
+BLOCKCHAIN_SERVICE_URL=https://veriframe-o9gg.onrender.com
+BLOCKCHAIN_CONNECT_TIMEOUT_MS=5000
+BLOCKCHAIN_READ_TIMEOUT_STANDARD_MS=10000
+BLOCKCHAIN_READ_TIMEOUT_LONG_MS=120000
+
+DB_HOST=dpg-db0ii8rncjis739m8d60-a
+DB_PORT=5432
+DB_NAME=mediaprovenance
+DB_USERNAME=veriframe
+DB_PASSWORD=nxsIkE6aEaEBDJxguZE6t0teCuZZ4Mfi
+
+UPLOAD_MAX_FILE_SIZE=10MB
+UPLOAD_MAX_REQUEST_SIZE=12MB
+```
+
+### Backend variable reference
+
+  ------------------------------------------------------------------------------
+  Variable                                   Purpose
+  ------------------------------------------ -----------------------------------
+  `SPRING_PROFILES_ACTIVE`                   `local` uses H2/local
+                                             configuration; `prod` uses
+                                             PostgreSQL configuration
+
+  `SERVER_PORT`                              Spring Boot HTTP port
+
+  `SECURITY_API_KEY`                         API key required for protected
+                                             write requests
+
+  `FRONTEND_ORIGIN`                          Allowed frontend origins for CORS
+
+  `CLOUDINARY_CLOUD_NAME`                    Cloudinary cloud/project name
+
+  `CLOUDINARY_API_KEY`                       Cloudinary API key
+
+  `CLOUDINARY_API_SECRET`                    Cloudinary API secret
+
+  `CLOUDINARY_AUTO_TAGGING_CATEGORIZATION`   Cloudinary AI auto-tagging
+                                             categorization
+
+  `BLOCKCHAIN_MODE`                          `HTTP` for the real blockchain
+                                             service; `MOCK` only for local
+                                             fallback/testing
+
+  `BLOCKCHAIN_SERVICE_URL`                   URL of the Node.js blockchain
+                                             provenance service
+
+  `BLOCKCHAIN_CONNECT_TIMEOUT_MS`            Blockchain connection timeout
+
+  `BLOCKCHAIN_READ_TIMEOUT_STANDARD_MS`      Standard blockchain read timeout
+
+  `BLOCKCHAIN_READ_TIMEOUT_LONG_MS`          Long timeout for blockchain
+                                             write/confirmation operations
+
+  `DB_HOST`                                  PostgreSQL host when using the
+                                             production profile
+
+  `DB_PORT`                                  PostgreSQL port
+
+  `DB_NAME`                                  PostgreSQL database name
+
+  `DB_USERNAME`                              PostgreSQL username
+
+  `DB_PASSWORD`                              PostgreSQL password
+
+  `UPLOAD_MAX_FILE_SIZE`                     Maximum individual upload size
+
+  `UPLOAD_MAX_REQUEST_SIZE`                  Maximum request size
+  ------------------------------------------------------------------------------
+
+## Frontend Environment
+
+File:
+
+``` text
+frontend/.env
+```
+
+``` env
 VITE_API_URL=http://localhost:8080
+VITE_API_KEY=cFizVzzxf3VwPhmYqwwVX+NljFc/Bm8AYnV6vlVHCXujcW/kpraHYsZj7WdctF6W
 ```
 
-Use any project-specific frontend API key/configuration required by the supplied `.env.example`.
+For the deployed frontend, `VITE_API_URL` must point to the deployed
+Spring Boot backend rather than localhost.
 
----
+Example:
 
-## Blockchain
+``` env
+VITE_API_URL=https://your-backend-service.example.com
+VITE_API_KEY=your_backend_api_key
+```
 
-Configure:
+> Vite variables are exposed to the browser. Do not put Cloudinary API
+> secrets, wallet private keys, or other privileged credentials in the
+> frontend environment.
 
-```env
-SEPOLIA_RPC_URL=your_rpc_url
+## Blockchain Environment
+
+File:
+
+``` text
+blockchain/.env
+```
+
+The blockchain service reads these variables directly:
+
+``` env
+SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+PRIVATE_KEY=0xca3fa99109e63d74d68b61cfcc30511ecf34a3e1a1cd4bb523d5978ab5f93d1a
+CONTRACT_ADDRESS=0xCf46d011B959eb0016dF8Ca1EF57Ac44b18c8A40
+```
+
+  -----------------------------------------------------------------------
+  Variable                            Purpose
+  ----------------------------------- -----------------------------------
+  `SEPOLIA_RPC_URL`                   Ethereum Sepolia RPC endpoint
+
+  `PRIVATE_KEY`                       Testnet wallet private key used to
+                                      submit provenance transactions
+
+  `CONTRACT_ADDRESS`                  Deployed `MediaProvenance` smart
+                                      contract address
+
+  `PORT`                              Blockchain REST service port;
+                                      defaults to `4000`
+  -----------------------------------------------------------------------
+
+Use a dedicated testnet wallet with limited funds. Never expose its
+private key publicly.
+
+## Production / Render Environment
+
+For the deployed application, the same variables are configured in the
+hosting platform's environment settings rather than committed as `.env`
+files.
+
+The deployed services are:
+
+``` text
+Frontend  → Render frontend service
+Backend   → Render Spring Boot service
+Blockchain → Render Node.js service
+```
+
+The backend production configuration should use:
+
+``` env
+BLOCKCHAIN_MODE=HTTP
+BLOCKCHAIN_SERVICE_URL=https://your-deployed-blockchain-service
+```
+
+The frontend production configuration should use:
+
+``` env
+VITE_API_URL=https://your-deployed-backend-service
+VITE_API_KEY=your_backend_api_key
+```
+
+The blockchain service should use its Sepolia configuration:
+
+``` env
+SEPOLIA_RPC_URL=your_sepolia_rpc_url
 PRIVATE_KEY=your_test_wallet_private_key
 CONTRACT_ADDRESS=your_deployed_contract_address
+PORT=4000
 ```
 
-Use a dedicated testnet wallet.
+> **For judges:** the deployed application is already configured. Judges
+> do not need to create `.env` files or provide credentials to use the
+> public demo.
 
----
+## Mock / Test Data Disclosure
+
+During the early development stage, the frontend was initially developed
+with **mock media, mock AI results, mock provenance timeline data, and
+mock verification states** so the UI could be built before all backend
+integrations were available.
+
+Those mock values were development scaffolding and are **not the
+intended production data path**.
+
+The current application uses the real backend APIs for the live
+workflow:
+
+``` text
+Frontend
+   ↓
+Spring Boot Backend
+   ↓
+Cloudinary
+   ↓
+SHA-256
+   ↓
+Blockchain Service
+   ↓
+MediaProvenance Smart Contract
+```
+
+The backend also contains a `MOCK` blockchain mode using an in-memory
+ledger. This exists as a local development/testing fallback. The
+live/deployed workflow is intended to use:
+
+``` env
+BLOCKCHAIN_MODE=HTTP
+```
+
+with the deployed blockchain service.
+
+This distinction is documented so reviewers can clearly see which
+components are development/test fallbacks and which components are used
+by the live application.
+
+------------------------------------------------------------------------
 
 # 14. Install Dependencies
 
 ## Blockchain
 
-```bash
+``` bash
 cd blockchain
 npm install
 ```
 
 ## Frontend
 
-```bash
+``` bash
 cd ../frontend
 npm install
 ```
 
-The backend uses the included Maven Wrapper and does not require a global Maven installation.
+The backend uses the included Maven Wrapper and does not require a
+global Maven installation.
 
----
+------------------------------------------------------------------------
 
 # 15. Compile the Smart Contract
 
-```bash
+``` bash
 cd blockchain
 npm run compile
 ```
 
 Expected:
 
-```text
+``` text
 Compiled OK -> artifacts/MediaProvenance.json
 ```
 
----
+------------------------------------------------------------------------
 
 # 16. Deploy the Smart Contract
 
@@ -585,53 +842,53 @@ Configure the blockchain `.env` first.
 
 Then:
 
-```bash
+``` bash
 npm run deploy
 ```
 
 Copy the deployed contract address into:
 
-```env
+``` env
 CONTRACT_ADDRESS=...
 ```
 
----
+------------------------------------------------------------------------
 
 # 17. Start the Blockchain Service
 
 From the `blockchain` directory:
 
-```bash
+``` bash
 npm start
 ```
 
 Expected:
 
-```text
+``` text
 Provenance API on http://localhost:4000
 ```
 
 Health check:
 
-```bash
+``` bash
 curl http://localhost:4000/health
 ```
 
 Keep this terminal running.
 
----
+------------------------------------------------------------------------
 
 # 18. Start the Backend
 
 Open a second terminal:
 
-```bash
+``` bash
 cd VeriFrame/backend
 ```
 
 Load the environment:
 
-```bash
+``` bash
 set -a
 source .env
 set +a
@@ -639,25 +896,25 @@ set +a
 
 Start Spring Boot:
 
-```bash
+``` bash
 ./mvnw spring-boot:run
 ```
 
 Backend:
 
-```text
+``` text
 http://localhost:8080
 ```
 
 Health check:
 
-```bash
+``` bash
 curl http://localhost:8080/actuator/health
 ```
 
 Expected:
 
-```json
+``` json
 {
   "status": "UP"
 }
@@ -665,24 +922,24 @@ Expected:
 
 Keep this terminal running.
 
----
+------------------------------------------------------------------------
 
 # 19. Start the Frontend
 
 Open a third terminal:
 
-```bash
+``` bash
 cd VeriFrame/frontend
 npm run dev
 ```
 
 Open the URL shown by Vite, normally:
 
-```text
+``` text
 http://localhost:5173
 ```
 
----
+------------------------------------------------------------------------
 
 # 20. Running the Complete Application
 
@@ -690,14 +947,14 @@ Three services need to be running:
 
 ### Terminal 1
 
-```bash
+``` bash
 cd blockchain
 npm start
 ```
 
 ### Terminal 2
 
-```bash
+``` bash
 cd backend
 set -a
 source .env
@@ -707,28 +964,28 @@ set +a
 
 ### Terminal 3
 
-```bash
+``` bash
 cd frontend
 npm run dev
 ```
 
 Then open:
 
-```text
+``` text
 http://localhost:5173
 ```
 
----
+------------------------------------------------------------------------
 
 # 21. How to Use VeriFrame
 
-## Step 1 — Register an Original
+## Step 1 --- Register an Original
 
 Upload an image through the Register page.
 
 The system:
 
-```text
+``` text
 Upload
  ↓
 Cloudinary
@@ -740,31 +997,31 @@ Blockchain
 CONFIRMED
 ```
 
----
+------------------------------------------------------------------------
 
-## Step 2 — Create a Transformation
+## Step 2 --- Create a Transformation
 
 Apply a supported transformation such as:
 
-```text
+``` text
 CROP
 ```
 
 The resulting file receives a new SHA-256 fingerprint.
 
----
+------------------------------------------------------------------------
 
-## Step 3 — Create Another Version
+## Step 3 --- Create Another Version
 
 Apply:
 
-```text
+``` text
 BG_REMOVAL
 ```
 
 The provenance chain becomes:
 
-```text
+``` text
 NONE
  ↓
 CROP
@@ -772,41 +1029,41 @@ CROP
 BG_REMOVAL
 ```
 
----
+------------------------------------------------------------------------
 
-## Step 4 — Verify the Original
+## Step 4 --- Verify the Original
 
 Upload the exact original file on the Verify page.
 
 Expected result:
 
-```text
+``` text
 VERIFIED
 ```
 
 The provenance timeline shows the registered history.
 
----
+------------------------------------------------------------------------
 
-## Step 5 — Test Tampering
+## Step 5 --- Test Tampering
 
 Modify the image and verify it again.
 
 Expected result:
 
-```text
+``` text
 MISMATCH
 ```
 
 Even a small change to the file changes its SHA-256 fingerprint.
 
----
+------------------------------------------------------------------------
 
 # 22. Judge Demo Flow
 
 For a short demonstration:
 
-```text
+``` text
 00:00 — Introduce the media provenance problem
 
 00:20 — Open VeriFrame
@@ -830,19 +1087,19 @@ For a short demonstration:
 03:20 — Summarize Cloudinary + SHA-256 + blockchain
 ```
 
----
+------------------------------------------------------------------------
 
 # 23. Blockchain Design
 
 The smart contract is:
 
-```text
+``` text
 MediaProvenance.sol
 ```
 
 A provenance record contains:
 
-```text
+``` text
 recordId
 mediaHash
 previousHash
@@ -853,7 +1110,7 @@ creator
 
 The contract supports:
 
-```solidity
+``` solidity
 registerMedia()
 registerVersion()
 verifyHash()
@@ -863,19 +1120,19 @@ getRecord()
 
 For an original file:
 
-```text
+``` text
 previousHash = zero hash
 ```
 
 For a derived version:
 
-```text
+``` text
 previousHash = parent media hash
 ```
 
 This creates a linked provenance history.
 
----
+------------------------------------------------------------------------
 
 # 24. Why SHA-256?
 
@@ -883,7 +1140,7 @@ SHA-256 generates a deterministic fingerprint from the exact file bytes.
 
 Example:
 
-```text
+``` text
 Original File
      ↓
 SHA-256
@@ -893,7 +1150,7 @@ HASH-A
 
 After modification:
 
-```text
+``` text
 Modified File
      ↓
 SHA-256
@@ -903,13 +1160,14 @@ HASH-B
 
 Therefore:
 
-```text
+``` text
 HASH-A ≠ HASH-B
 ```
 
-VeriFrame uses this property to determine whether a file matches a registered version.
+VeriFrame uses this property to determine whether a file matches a
+registered version.
 
----
+------------------------------------------------------------------------
 
 # 25. API Overview
 
@@ -917,13 +1175,13 @@ VeriFrame uses this property to determine whether a file matches a registered ve
 
 Base URL:
 
-```text
+``` text
 http://localhost:8080/api/v1
 ```
 
 Important endpoints include:
 
-```text
+``` text
 POST /media
 GET  /media/{mediaId}/provenance
 POST /media/{mediaId}/transform
@@ -934,13 +1192,13 @@ POST /verify
 
 Base URL:
 
-```text
+``` text
 http://localhost:4000
 ```
 
 Endpoints:
 
-```text
+``` text
 GET  /health
 POST /api/register
 POST /api/version
@@ -948,52 +1206,61 @@ POST /api/verify
 GET  /api/history/:hash
 ```
 
----
+------------------------------------------------------------------------
 
 # 26. Testing
 
 ## Blockchain
 
-```bash
+``` bash
 cd blockchain
 npm test
 ```
 
 The blockchain tests cover:
 
-- Deterministic SHA-256 hashing
-- Original registration
-- Verification
-- Tampered file detection
-- One-byte modification detection
-- Version chaining
-- Duplicate registration rejection
-- Unknown parent rejection
-- API flow
-- Error handling
-- Health endpoint
+-   Deterministic SHA-256 hashing
+-   Original registration
+-   Verification
+-   Tampered file detection
+-   One-byte modification detection
+-   Version chaining
+-   Duplicate registration rejection
+-   Unknown parent rejection
+-   API flow
+-   Error handling
+-   Health endpoint
 
 ## Backend
 
-```bash
+``` bash
 cd backend
 ./mvnw test
 ```
 
 ## Frontend Production Build
 
-```bash
+``` bash
 cd frontend
 npm run build
 ```
 
----
+------------------------------------------------------------------------
 
 # 27. Security
 
-The following files must never be committed:
+## Environment and Secrets
 
-```text
+The repository contains `.env.example` files with the required variable
+names and safe placeholders. Real environment values are supplied
+locally or through Render's environment settings.
+
+The README documents the **required environment variables**, but never
+contains real secret values.
+
+The following files containing real credentials must never be committed:
+
+``` text
 .env
 backend/.env
 frontend/.env
@@ -1002,7 +1269,7 @@ blockchain/.env
 
 Never expose:
 
-```text
+``` text
 Cloudinary API Secret
 API keys
 Database passwords
@@ -1012,9 +1279,11 @@ JWT secrets
 
 The repository should contain only safe example configuration files.
 
-Before making the repository public, review the Git history for accidentally committed credentials as well as checking the current files.
+Before making the repository public, review the Git history for
+accidentally committed credentials as well as checking the current
+files.
 
----
+------------------------------------------------------------------------
 
 # 28. Troubleshooting
 
@@ -1022,7 +1291,7 @@ Before making the repository public, review the Git history for accidentally com
 
 Check Java:
 
-```bash
+``` bash
 java --version
 ```
 
@@ -1030,35 +1299,35 @@ The project requires Java 21.
 
 Then try:
 
-```bash
+``` bash
 ./mvnw clean package -DskipTests
 ```
 
----
+------------------------------------------------------------------------
 
 ## Blockchain service does not start
 
 Check:
 
-```bash
+``` bash
 curl http://localhost:4000/health
 ```
 
 Then verify:
 
-```env
+``` env
 SEPOLIA_RPC_URL=...
 PRIVATE_KEY=...
 CONTRACT_ADDRESS=...
 ```
 
----
+------------------------------------------------------------------------
 
 ## Frontend cannot connect to backend
 
 Confirm:
 
-```text
+``` text
 Frontend   → http://localhost:5173
 Backend    → http://localhost:8080
 Blockchain → http://localhost:4000
@@ -1066,11 +1335,11 @@ Blockchain → http://localhost:4000
 
 Check:
 
-```env
+``` env
 VITE_API_URL=http://localhost:8080
 ```
 
----
+------------------------------------------------------------------------
 
 ## Verification shows `PENDING`
 
@@ -1078,21 +1347,22 @@ Blockchain registration may still be processing.
 
 Wait for the transaction to be confirmed and retry verification.
 
----
+------------------------------------------------------------------------
 
 ## Verification shows `MISMATCH`
 
-The uploaded file's SHA-256 fingerprint does not match the registered hash.
+The uploaded file's SHA-256 fingerprint does not match the registered
+hash.
 
 Verify that you are using the exact registered file.
 
----
+------------------------------------------------------------------------
 
 # 29. Why VeriFrame?
 
 VeriFrame connects three important layers:
 
-```text
+``` text
 Cloudinary
    +
 Cryptographic Fingerprinting
@@ -1104,44 +1374,58 @@ Cloudinary handles the media lifecycle and transformation pipeline.
 
 SHA-256 provides an exact fingerprint of each file.
 
-Blockchain provides a tamper-evident provenance record connecting versions together.
+Blockchain provides a tamper-evident provenance record connecting
+versions together.
 
-Together, these components create a practical media verification workflow.
+Together, these components create a practical media verification
+workflow.
 
----
+------------------------------------------------------------------------
 
 # 30. Links
 
-| Resource | URL |
-|---|---|
-| Live Demo | https://veriframe-frontend-x8u4.onrender.com |
-| Backend API | https://veriframe-backend-java.onrender.com |
-| Backend Health | https://veriframe-backend-java.onrender.com/actuator/health |
-| Blockchain Service | https://veriframe-o9gg.onrender.com |
-| Blockchain Health | https://veriframe-o9gg.onrender.com/health |
-| GitHub | `<PUBLIC_GITHUB_URL>` |
-| Demo Video | `<DEMO_VIDEO_URL>` |
-| LinkedIn Project Post | `<LINKEDIN_POST_URL>` |
+  -------------------------------------------------------------------------------------------------
+  Resource                            URL
+  ----------------------------------- -------------------------------------------------------------
+  Live Demo                           https://veriframe-frontend-x8u4.onrender.com
 
----
+  Backend API                         https://veriframe-backend-java.onrender.com
+
+  Backend Health                      https://veriframe-backend-java.onrender.com/actuator/health
+
+  Blockchain Service                  https://veriframe-o9gg.onrender.com
+
+  Blockchain Health                   https://veriframe-o9gg.onrender.com/health
+
+  GitHub                              `<PUBLIC_GITHUB_URL>`
+
+  Demo Video                          `<DEMO_VIDEO_URL>`
+
+  LinkedIn Project Post               `<LINKEDIN_POST_URL>`
+  -------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 # 31. Team
 
 ## VeriFrame
 
-**Cloudinary AI Hackathon 2026 — Pixels to Products**
+**Cloudinary AI Hackathon 2026 --- Pixels to Products**
 
 Team Members:
 
-- `<TEAM_MEMBER_1>`
-- `<TEAM_MEMBER_2>`
-- `<TEAM_MEMBER_3>`
-- `<TEAM_MEMBER_4>`
+-   `<TEAM_MEMBER_1>`
+-   `<TEAM_MEMBER_2>`
+-   `<TEAM_MEMBER_3>`
+-   `<TEAM_MEMBER_4>`
 
 Replace the placeholders with the final team details.
 
----
+------------------------------------------------------------------------
 
 ## One-Line Summary
 
-> **VeriFrame uses Cloudinary for AI-powered media processing and transformation, SHA-256 for exact file fingerprinting, and blockchain-backed provenance to make digital media history verifiable and tamper-evident.**
+> **VeriFrame uses Cloudinary for AI-powered media processing and
+> transformation, SHA-256 for exact file fingerprinting, and
+> blockchain-backed provenance to make digital media history verifiable
+> and tamper-evident.**

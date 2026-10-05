@@ -1,6 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL;
-const API_KEY = import.meta.env.VITE_API_KEY;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
+const API_KEY =
+  import.meta.env.VITE_API_KEY || 'dev-secret-api-key-change-in-prod';
 if (!API_URL) {
   throw new Error("VITE_API_URL is not configured");
 }
